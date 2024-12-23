@@ -31,6 +31,12 @@ int main(int argc, char **argv) {
 	config_t conf;
 	
 	config_init(&conf);
+	
+	if (!argv[optind]) {
+		printf("Error: you must specify a config file.\n");
+		return 1;
+	}
+	
 	if (!config_read_file(&conf, argv[optind])) {
 		printf("%s on line %d\n", config_error_text(&conf), config_error_line(&conf));
 		return 1;
