@@ -13,6 +13,8 @@ SEGMENTS = {
     "BSS":      0x0200,
 }
 
+print("XENLAB06")
+
 for filename in sys.argv[1:]:
     f = open(filename)
     lines = f.readlines()
