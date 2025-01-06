@@ -124,9 +124,11 @@ int main(int argc, char **argv) {
 		
 		if (bootable) disk[0x0016] = i;
 		
-		printf("%24s (%7s): id $%02x, sectors $%02x-$%02x, %d sectors large (%dB) %s\n",
+		printf("%24s (%7s): id $%02x, sectors $%02x-$%02x, %d sectors large (%dB) $%04x - $%04x %s\n",
 		        filename_s, &disk[0x200+i*16 + 8],
 		        i, sect_p, sect_p + sectors - 1, sectors, len,
+		        config_setting_get_int(fiaddr),
+		        config_setting_get_int(fiaddr) + len,
 		        bootable ? "(BOOT)" : "");
 		
 		sect_p += sectors;
