@@ -12,6 +12,19 @@ uint8_t disk[0x200 * 256] = {0};
 
 int verbose = 0;
 
+typedef struct __attribute__((packed)) {
+	char magic;
+	unsigned char id;
+	unsigned char begin_sect;
+	unsigned char sect_size;
+	unsigned short load_addr;
+
+	unsigned char checksum;
+	char pad2;
+
+	char filename[8];
+} FileEntry;
+
 int main(int argc, char **argv) {
 	int c = 0;
 	
@@ -103,13 +116,13 @@ int main(int argc, char **argv) {
 		int sectors = (int)ceil(len / 512.0);
 		
 		//file table
-		disk[0x200+i*16 + 0] = 'F';
-		disk[0x200+i*16 + 1] = i;
-		disk[0x200+i*16 + 2] = sect_p;
-		disk[0x200+i*16 + 3] = sectors;
-		disk[0x200+i*16 + 4] = (config_setting_get_int(fiaddr)) >> 0;
-		disk[0x200+i*16 + 5] = (config_setting_get_int(fiaddr)) >> 8;
-		if (finame) memcpy(disk + 0x200+i*16 + 8, config_setting_get_string(finame), 7);
+		FileEntry *ent = (FileEntry*) &disk[0x200 + i*16];
+		ent->magic = 'F';
+		ent->id = i;
+		ent->begin_sect = sect_p;
+		ent->sect_size = sectors;
+		ent->load_addr = config_setting_get_int(fiaddr);
+		if (finame) memcpy(ent->filename, config_setting_get_string(finame), 8);
 		
 		if (sect_p + sectors > 0xff) {
 			printf("Error: file %s goes over the storage limit. aborting.\n", filename_s);
@@ -119,13 +132,28 @@ int main(int argc, char **argv) {
 		//file data
 		memcpy(disk + sect_p * 0x200, buffer, len);
 		
+		// calculate le checksum
+		ent->checksum = 0;
+		{
+			unsigned char sum = 0;
+			for (int j=0; j<len; j++) {
+				sum += buffer[j];
+			}
+			
+			for (int j=0; j<sizeof(*ent); j++) {
+				sum += disk[0x200 + i*16 + j];
+			}
+
+			ent->checksum = ~sum;
+		}
+
 		bool bootable = false;
 		if (boot) bootable = config_setting_get_bool(boot);
 		
 		if (bootable) disk[0x0016] = i;
 		
-		printf("%24s (%7s): id $%02x, sectors $%02x-$%02x, %d sectors large (%dB) $%04x - $%04x %s\n",
-		        filename_s, &disk[0x200+i*16 + 8],
+		printf("%24s (%-8s): id $%02x, sectors $%02x-$%02x, %d sectors large (%dB) $%04x - $%04x %s\n",
+		        filename_s, ent->filename,
 		        i, sect_p, sect_p + sectors - 1, sectors, len,
 		        config_setting_get_int(fiaddr),
 		        config_setting_get_int(fiaddr) + len,

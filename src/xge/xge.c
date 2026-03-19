@@ -128,7 +128,7 @@ void fill_tile(int t, int c) {
 	}
 }
 
-void replace_tile(int t, int from, int to) {
+void replace_tile_color(int t, int from, int to) {
 	for (int x=0; x<8; x++) {
 		for (int y=0; y<8; y++) {
 			if (get_tile_value(t, x, y) == from )set_tile_value(t, x, y, to);
@@ -145,6 +145,8 @@ void save() {
 		perror("Unable to write file");
 		return;
 	}
+
+	printf("saved!!!!!!!!!\n");
 	
 	fwrite(tileset, 1, sizeof tileset, fp);
 	fclose(fp);
@@ -197,7 +199,7 @@ void process_key(int key) {
 		// Tools
 		case KEY_Q: set_tile_value(cur_tile, cur_x, cur_y, cur_col); break;
 		case KEY_W: set_tile_value(cur_tile, cur_x, cur_y, 0); break;
-		case KEY_E: replace_tile(cur_tile, get_tile_value(cur_tile, cur_x, cur_y), cur_col); break;
+		case KEY_E: replace_tile_color(cur_tile, get_tile_value(cur_tile, cur_x, cur_y), cur_col); break;
 		case KEY_T: fliph_tile(cur_tile); break;
 		case KEY_Y: flipv_tile(cur_tile); break;
 		
@@ -215,7 +217,7 @@ void process_key(int key) {
 void update() {
 	int key;
 	
-	while (key = GetKeyPressed()) {
+	while ((key = GetKeyPressed())) {
 		printf("%04x\n", key);
 		process_key(key);
 	}

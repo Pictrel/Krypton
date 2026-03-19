@@ -5,12 +5,10 @@ import sys
 PRINT_LOCAL = True
 
 SEGMENTS = {
-    "CODE":     0xF000,
-    "API":      0xF800,
-    "APITABLE": 0xFF00,
-    "ZEROPAGE": 0x0000,
-    "STACK":    0x0100,
-    "BSS":      0x0200,
+    "STUFF":     0xF000,
+    "STUFF_EXT": 0xC000,
+    "API":       0xF800,
+    "APITABLE":  0xFF00,
 }
 
 print("XENLAB06")
