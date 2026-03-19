@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import sys
+import struct
 
 PRINT_LOCAL = True
 
@@ -9,9 +10,14 @@ SEGMENTS = {
     "STUFF_EXT": 0xC000,
     "API":       0xF800,
     "APITABLE":  0xFF00,
+    "ZEROPAGE":  0x0000,
+    "STACK":     0x0100,
+    "BSS":       0x0200,
 }
 
-print("XENLAB06")
+out = sys.stdout.buffer
+
+out.write(b"=P" + bytes([0] * 14))
 
 for filename in sys.argv[1:]:
     f = open(filename)
@@ -19,17 +25,14 @@ for filename in sys.argv[1:]:
     
     label = "???"
     seg   = ""
-    pc = 0
+    base_addr = 0
     
     for l in lines:
-        if not (l[0] == '0'):
+        if l[0] != '0':
             continue
         
-        src_a = int(l[:6], 16)
-        src_s = l[24:].strip()
-        #print(src_a, src_s)
-        
-        tokens = src_s.split()
+        offset_addr = int(l[:6], 16)
+        tokens = l[24:].strip().split()
         
         if (len(tokens) < 1):
             continue
@@ -38,19 +41,10 @@ for filename in sys.argv[1:]:
             tokens[1] = tokens[1].strip('"')
             seg = tokens[1]
             if seg in SEGMENTS:
-                pc = SEGMENTS[seg]
+                base_addr = SEGMENTS[seg]
             else:
-                pc = pc + src_a
-        if tokens[0] == ".zeropage":
-            seg = "ZEROPAGE"
-            pc = SEGMENTS[seg]
+                base_addr = base_addr + offset_addr
+        
         elif seg != "":
-            if tokens[0].endswith(":"):
-                if tokens[0].startswith("@"):
-                    if PRINT_LOCAL:
-                        print((pc+src_a), "." + tokens[0][1:-1])
-                    else:
-                        print((pc+src_a), label + "." + tokens[0][1:-1])
-                else:
-                    label = tokens[0][:-1]
-                    print((pc+src_a), label)
+            if tokens[0].endswith(":") and base_addr >= 0x8000:
+                out.write(struct.pack("=H14s", (base_addr+offset_addr), bytes( tokens[0][:-1].encode('ascii') )))
